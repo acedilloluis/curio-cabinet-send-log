@@ -18,25 +18,25 @@ internal partial class Program
 	    Recursive = true
 	};
 	
-	Option<DateOnly> dateOption = new Option<DateOnly>("--date")
+	Option<DateOnly> dateOption = new Option<DateOnly>("--date", "-d")
 	{
 	    Description = "Date climb sent or attempted (uses current culture format)",
 	    DefaultValueFactory = _ => DateOnly.FromDateTime(DateTime.Now)
 	};
 
-	Option<bool> sentOption = new Option<bool>("--sent")
+	Option<bool> sentOption = new Option<bool>("--sent", "-s")
 	{
 	    Description = "Climb sent",
 	    DefaultValueFactory = _ => true
 	};
 
-	Option<int> attemptOption = new Option<int>("--attempted")
+	Option<int> attemptOption = new Option<int>("--attempted", "-a")
 	{
 	    Description = "Climb attempted x times",
 	    DefaultValueFactory = _ => 1
 	};
 
-	Option<string> noteOption = new Option<string>("--note")
+	Option<string> noteOption = new Option<string>("--note", "-n")
 	{
 	    Description = "Enter a short note about the climb",
 	    DefaultValueFactory = _ => "There's nothing here."
@@ -72,7 +72,7 @@ internal partial class Program
 	    Arguments = { titleArgument }
 	};
 
-	RootCommand rootCommand = new RootCommand("A simple climbing send log CLI")
+	RootCommand rootCommand = new RootCommand("A simple climbing send log CLI tool")
 	{
 	    Options = { verboseOption },
 	    Subcommands = { createCommand, listCommand, removeCommand, addAttemptCommand }
