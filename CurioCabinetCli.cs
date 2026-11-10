@@ -1,6 +1,7 @@
 #:package System.CommandLine@2.0.14
 
 using System;
+using System.Linq;
 using System.IO;
 using System.CommandLine;
 using System.CommandLine.Parsing;
@@ -16,7 +17,8 @@ internal partial class Program
 	    Description = "Show detailed output",
 	    Recursive = true
 	};
-	
+
+	//options for create command
 	Option<DateOnly> dateOption = new Option<DateOnly>("--date", "-d")
 	{
 	    Description = "Date climb sent or attempted (uses current culture format)",
@@ -41,6 +43,7 @@ internal partial class Program
 	    DefaultValueFactory = _ => "There's nothing here."
 	};
 
+	//options for edit command
 	Option<string> editTitleOption = new Option<string>("--edtitle", "-edt")
 	{
 	    Description = "Edit the title of a climb"
@@ -71,6 +74,22 @@ internal partial class Program
 	    Description = "Change the number of attempts"
 	};
 
+	//options for list command
+	Option<DateOnly?> filterByDateOption = new Option<DateOnly?>("--filterdate", "-fd")
+	{
+	    Description = "Filter log by date"
+	};
+
+	Option<string> filterByGradeOption = new Option<string>("--filtergrade", "-fg")
+	{
+	    Description = "Filter log by grade"
+	};
+
+	Option<bool?> filterBySentOption = new Option<bool?>("--filtersent", "-fs")
+	{
+	    Description = "Filter log by whether climb was sent or not"
+	};
+
 	//arguments
 	Argument<string> titleArgument = new Argument<string>("title")
 	{
@@ -89,7 +108,10 @@ internal partial class Program
 	    Options = { dateOption, sentOption, attemptOption, noteOption }
 	};
 
-	Command listCommand = new Command("list", "List all climbs in log");
+	Command listCommand = new Command("list", "List all climbs in log")
+	{
+	    Options = { filterByDateOption, filterBySentOption, filterByGradeOption }
+	};
 
 	Command removeCommand = new Command("remove", "Remove a climb from the log")
 	{
@@ -146,14 +168,23 @@ internal partial class Program
 	listCommand.SetAction(parseResult =>
 	{
 	    bool verbose = parseResult.GetValue(verboseOption);
+	    DateOnly? date = parseResult.GetValue(filterByDateOption)!;
+	    string grade = parseResult.GetValue(filterByGradeOption)!;
+	    bool? sent = parseResult.GetValue(filterBySentOption)!;
 	    List<ClimbLog> climbs = LoadClimbs();
 
-	    if(climbs.Count == 0)
+	    climbs = climbs.Where(climb =>
+	        (sent is null || climb.Sent == sent) &&
+		(date is null || climb.Date == date) &&
+		(grade is null || climb.Grade == grade)
+	    ).ToList();
+	    
+	    if (climbs.Count == 0)
 	    {
 		Console.WriteLine("No climbs logged.");
 		return;
 	    }
-
+	    
 	    foreach(ClimbLog climb in climbs)
 	    {
 		Console.WriteLine($"Climb {climb.Id}: {climb.Title} | {climb.Grade} | {climb.Date}");
