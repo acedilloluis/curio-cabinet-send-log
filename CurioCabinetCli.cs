@@ -129,10 +129,12 @@ internal partial class Program
 	    Options = { editTitleOption, editGradeOption, editDateOption, editNoteOption, editSentOption, editAttemptsOption }
 	};
 
+	Command statsCommand = new Command("stats", "Generate summary statiscs");
+
 	RootCommand rootCommand = new RootCommand("A simple climbing send log CLI tool")
 	{
 	    Options = { verboseOption },
-	    Subcommands = { createCommand, listCommand, removeCommand, addAttemptCommand, editCommand }
+	    Subcommands = { createCommand, listCommand, removeCommand, addAttemptCommand, editCommand, statsCommand }
 	};
 
 	//actions
@@ -276,6 +278,40 @@ internal partial class Program
 	    Console.WriteLine($"Edited climb {climb.Id}: {climb.Title}");
 	    if(verbose)
 		Console.WriteLine($"Sent: {climb.Sent} |  Attempts: {updatedAttempts} |  Note: {climb.Note}");
+	    return 0;
+	});
+
+	statsCommand.SetAction(parseResult =>
+	{
+	    bool verbose = parseResult.GetValue(verboseOption);
+	    List<ClimbLog> climbs = LoadClimbs();
+	    climbs.Sort((c1, c2) => c1.Attempts.CompareTo(c2.Attempts));
+	    int totalClimbs = climbs.Count;
+	    double avgAttempts = climbs.Average(climb => climb.Attempts);
+	    int totalFlashes = climbs.Where(climb => climb.Attempts == 1).Count();
+	    IEnumerable<string> distinctGrades = climbs.Select(climb => climb.Grade).Distinct();
+	    double medianAttempts = totalClimbs % 2 != 0 ?
+		climbs[totalClimbs / 2].Attempts :
+	        (climbs[totalClimbs / 2].Attempts + climbs[(totalClimbs - 1) / 2].Attempts) / 2;
+	    var mostCommonGrade = climbs.GroupBy(climb => climb.Grade)
+		.Select(g => new {Grade = g.Key, Count = g.Count()})
+		.OrderByDescending(counts => counts.Count)
+		.First();
+
+	    Console.WriteLine($"Total climbs: {totalClimbs} | Total flashes: {totalFlashes} | Most common grade: {mostCommonGrade.Grade} with {mostCommonGrade.Count} climbs");
+	    Console.WriteLine($"Min attempts: {climbs.Min(climb => climb.Attempts)} | Max attempts: {climbs.Max(climb => climb.Attempts)} | Median attempts: {medianAttempts} | Average Attempts: {avgAttempts}");
+	    
+	    if (verbose)
+	    {
+		foreach(string grade in distinctGrades)
+		{
+		    int total = climbs.Where(climb => climb.Grade == grade).Count();
+		    double avgAttemptsPerGrade = climbs.Where(climb => climb.Grade == grade).Average(climb => climb.Attempts);
+		    Console.WriteLine($"Total climbs at {grade}: {total}");
+		    Console.WriteLine($"Average attempts: {avgAttemptsPerGrade}");
+		}
+	    }
+	    
 	    return 0;
 	});
 
