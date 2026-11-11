@@ -274,6 +274,13 @@ internal partial class Program
 	{
 	    bool verbose = parseResult.GetValue(verboseOption);
 	    List<ClimbLog> climbs = LoadClimbs();
+
+	    if (climbs.Count == 0)
+	    {
+		Console.Error.WriteLine("No climbs found.");
+		return -1;
+	    }
+	    
 	    climbs.Sort((c1, c2) => c1.Attempts.CompareTo(c2.Attempts));
 	    IEnumerable<string> distinctGrades = climbs.Select(climb => climb.Grade).Distinct();
 	   
