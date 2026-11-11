@@ -28,7 +28,7 @@ internal partial class Program
 	Option<bool> sentOption = new Option<bool>("--sent", "-s")
 	{
 	    Description = "Climb sent",
-	    DefaultValueFactory = _ => true
+	    DefaultValueFactory = _ => false
 	};
 
 	Option<int> attemptOption = new Option<int>("--attempted", "-a")
