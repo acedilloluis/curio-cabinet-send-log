@@ -146,12 +146,9 @@ internal partial class Program
 	    bool sent = parseResult.GetValue(sentOption);
 	    int attempts = parseResult.GetValue(attemptOption);
 	    string note = parseResult.GetValue(noteOption)!;
-	    bool verbose = parseResult.GetValue(verboseOption);
 
 	    List<ClimbLog> climbs = LoadClimbs();
-	    int id = climbs.Count > 0 ? climbs.Max(c => c.Id) + 1 : 1;
 	    ClimbLog climb = new ClimbLog(
-		id,
 		title,
 		grade,
 		date,
@@ -162,14 +159,11 @@ internal partial class Program
 	    climbs.Add(climb);
 	    SaveClimbs(climbs);
 
-	    Console.WriteLine($"Added climb {id}: {title} | {grade} | {date}");
-	    if (verbose)
-		Console.WriteLine($"Sent: {sent} |  Attempts: {attempts} |  Note: {note}");
+	    Console.WriteLine($"{climb}");
 	});
 
 	listCommand.SetAction(parseResult =>
 	{
-	    bool verbose = parseResult.GetValue(verboseOption);
 	    DateOnly? date = parseResult.GetValue(filterByDateOption)!;
 	    string grade = parseResult.GetValue(filterByGradeOption)!;
 	    bool? sent = parseResult.GetValue(filterBySentOption)!;
@@ -188,12 +182,7 @@ internal partial class Program
 	    }
 	    
 	    foreach(ClimbLog climb in climbs)
-	    {
-		Console.WriteLine($"Climb {climb.Id}: {climb.Title} | {climb.Grade} | {climb.Date}");
-
-		if(verbose)
-		    Console.WriteLine($"Sent: {climb.Sent} | Attempts: {climb.Attempts} | Note: {climb.Note}");
-	    }
+		Console.WriteLine($"{climb}");
 	});
 
 	removeCommand.SetAction(parseResult =>
@@ -213,9 +202,9 @@ internal partial class Program
 	    climbs.Remove(climb);
 	    SaveClimbs(climbs);
 
-	    Console.WriteLine($"Removed climb {climb.Id}: {climb.Title}");
+	    Console.WriteLine($"Removed climb: {climb.Title}");
 	    if(verbose)
-		Console.WriteLine($"Note: {climb.Note}");
+		Console.WriteLine($"{climb}");
 
 	    return 0;
 	});
@@ -251,9 +240,9 @@ internal partial class Program
 	    };
 	    SaveClimbs(climbs);
 
-	    Console.WriteLine($"Edited climb {climb.Id}: {updatedTitle} | {updatedDate}");
+	    Console.WriteLine($"Edited climb: {updatedTitle}");
 	    if(verbose)
-		Console.WriteLine($"Sent: {updatedSent} |  Attempts: {updatedAttempts} |  Note: {updatedNote}");
+		Console.WriteLine($"{climbs.First(c => c.Title == updatedTitle)}");
 	    return 0;
 	});
 
@@ -275,9 +264,9 @@ internal partial class Program
 	    climbs[climbs.IndexOf(climb)] = climb with { Attempts = updatedAttempts };
 	    SaveClimbs(climbs);
 
-	    Console.WriteLine($"Edited climb {climb.Id}: {climb.Title}");
+	    Console.WriteLine($"Edited climb: {climb.Title}");
 	    if(verbose)
-		Console.WriteLine($"Sent: {climb.Sent} |  Attempts: {updatedAttempts} |  Note: {climb.Note}");
+		Console.WriteLine($"{climb}");
 	    return 0;
 	});
 
@@ -286,32 +275,68 @@ internal partial class Program
 	    bool verbose = parseResult.GetValue(verboseOption);
 	    List<ClimbLog> climbs = LoadClimbs();
 	    climbs.Sort((c1, c2) => c1.Attempts.CompareTo(c2.Attempts));
-	    int totalClimbs = climbs.Count;
-	    double avgAttempts = climbs.Average(climb => climb.Attempts);
-	    int totalFlashes = climbs.Where(climb => climb.Attempts == 1).Count();
 	    IEnumerable<string> distinctGrades = climbs.Select(climb => climb.Grade).Distinct();
-	    double medianAttempts = totalClimbs % 2 != 0 ?
-		climbs[totalClimbs / 2].Attempts :
-	        (climbs[totalClimbs / 2].Attempts + climbs[(totalClimbs - 1) / 2].Attempts) / 2;
+	   
+	    int totalClimbs = climbs.Count;
+	    int totalFlashes = climbs.Where(climb => climb.Attempts == 1).Count();
 	    var mostCommonGrade = climbs.GroupBy(climb => climb.Grade)
-		.Select(g => new {Grade = g.Key, Count = g.Count()})
+		.Select(g => new { Grade = g.Key, Count = g.Count() })
 		.OrderByDescending(counts => counts.Count)
 		.First();
 
-	    Console.WriteLine($"Total climbs: {totalClimbs} | Total flashes: {totalFlashes} | Most common grade: {mostCommonGrade.Grade} with {mostCommonGrade.Count} climbs");
-	    Console.WriteLine($"Min attempts: {climbs.Min(climb => climb.Attempts)} | Max attempts: {climbs.Max(climb => climb.Attempts)} | Median attempts: {medianAttempts} | Average Attempts: {avgAttempts}");
+	    string format1 = "| {0, -12} | {1, -13} | {2, -20} |";
+	    string line1 = new string('-', 55);
+
+	    //header
+	    Console.WriteLine(line1);
+	    Console.WriteLine(format1, "Total Climbs", "Total Flashes", "Mode Grade");
+	    Console.WriteLine(line1);
+
+	    //rows
+	    Console.WriteLine(format1, totalClimbs, totalFlashes, $"{mostCommonGrade.Grade} ({mostCommonGrade.Count} climbs)");
+	    Console.WriteLine(line1);
+
+	    double avgAttempts = climbs.Average(climb => climb.Attempts);
+	    double medianAttempts = totalClimbs % 2 != 0 ?
+		climbs[totalClimbs / 2].Attempts :
+		(climbs[totalClimbs / 2].Attempts + climbs[(totalClimbs - 1) / 2].Attempts) / 2;
+	    int minAttempts = climbs.Min(climb => climb.Attempts);
+	    int maxAttempts = climbs.Max(climb => climb.Attempts);
+	    
+	    string format2 = "| {0, -12} | {1, -12} | {2, -15} | {3, -16} |";
+	    string line2 = new string('-', 68);
+	    
+	    //header
+	    Console.WriteLine(line2);
+	    Console.WriteLine(format2, "Min Attempts", "Max Attempts", "Median Attempts", "Average Attempts");
+	    Console.WriteLine(line2);
+
+	    //rows
+	    Console.WriteLine(format2, minAttempts, maxAttempts, medianAttempts, avgAttempts);
+	    Console.WriteLine(line2);
 	    
 	    if (verbose)
 	    {
+		string format3 = "| {0, -8} | {1, -5} | {2, -16}|";
+		string line3 = new string('-', 39);
+
+		//head
+		Console.WriteLine(line3);
+		Console.WriteLine(format3, "Grade", "Total", "Average Attempts");
+		Console.WriteLine(line3);
+		
 		foreach(string grade in distinctGrades)
 		{
 		    int total = climbs.Where(climb => climb.Grade == grade).Count();
-		    double avgAttemptsPerGrade = climbs.Where(climb => climb.Grade == grade).Average(climb => climb.Attempts);
-		    Console.WriteLine($"Total climbs at {grade}: {total}");
-		    Console.WriteLine($"Average attempts: {avgAttemptsPerGrade}");
+		    double avgAttemptsPerGrade = climbs
+			.Where(climb => climb.Grade == grade)
+			.Average(climb => climb.Attempts);
+
+		    //rows
+		    Console.WriteLine(format3, grade, total, $"{avgAttemptsPerGrade:F2}");
+		    Console.WriteLine(line3);
 		}
 	    }
-	    
 	    return 0;
 	});
 
@@ -344,7 +369,6 @@ internal partial class Program
     }
 
     public record ClimbLog(
-	int Id,
 	string Title,
 	string Grade,
 	DateOnly Date,
