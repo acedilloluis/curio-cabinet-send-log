@@ -8,10 +8,6 @@
 #:include commands/AddAttemptCommand.cs
 
 global using System.CommandLine;
-global using System.CommandLine.Parsing;
-using System;
-using System.Linq;
-using System.IO;
 using System.Text.Json;
 
 namespace CurioCabinetCli;
