@@ -14,7 +14,7 @@ namespace CurioCabinetCli;
 
 internal partial class Program
 {
-    static int Main(string[] args)
+    public static int App(string[] args)
     {
 		Option<bool> verboseOption = new Option<bool>("--verbose")
 		{
